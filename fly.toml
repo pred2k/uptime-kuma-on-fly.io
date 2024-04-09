@@ -1,0 +1,55 @@
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'your-app' # your unique app name. only lowercase, numbers and hyphens.
+
+# See https://fly.io/docs/reference/regions/#fly-io-regions
+primary_region = 'ams'
+
+kill_signal = 'SIGINT'
+kill_timeout = '5s'
+
+[experimental]
+  auto_rollback = true
+
+[build]
+  # source: https://hub.docker.com/r/louislam/uptime-kuma
+  image = 'louislam/uptime-kuma:1.23.11'
+
+[env]
+  PORT = '8080'
+
+[[mounts]]
+  source = 'kuma'
+  destination = '/app/data'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8080
+  processes = ['app']
+
+[[services.ports]]
+    port = 80
+    handlers = ['http']
+    force_https = true
+
+[[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+  [services.concurrency]
+    type = 'connections'
+    hard_limit = 25
+    soft_limit = 20
+
+[[services.tcp_checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '1s'
+
+[[vm]]
+  # vm size to stay in free tier
+  # https://fly.io/docs/about/pricing/#free-allowances
+  size = 'shared-cpu-1x'
+  memory = "256mb"
